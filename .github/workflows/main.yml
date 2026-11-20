@@ -1,4 +1,3 @@
-
 name: Build APK Target 1 Juta
 
 on:
@@ -9,40 +8,32 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android
+        uses: android-actions/setup-android@v3
 
       - name: Install Gradle
         run: |
-          wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
+          wget https://services.gradle.org/distributions/gradle-8.9-bin.zip
           unzip -q gradle-8.9-bin.zip
           echo "$PWD/gradle-8.9/bin" >> $GITHUB_PATH
 
-      - name: Setup Android project
+      - name: Setup project
         run: |
           mkdir -p app/src/main/assets
-          mkdir -p app/src/main/java/com/target1juta/app
+          mkdir -p app/src/main/java/com/target1juta
           cp index.html app/src/main/assets/index.html
 
-          cat > settings.gradle <<'EOF'
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-          rootProject.name = 'Target1Juta'
-          include ':app'
-          EOF
+          echo "rootProject.name = 'Target1Juta'" > settings.gradle
+          echo "include ':app'" >> settings.gradle
 
           cat > build.gradle <<'EOF'
           plugins {
@@ -50,15 +41,20 @@ jobs:
           }
           EOF
 
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2048m
+          android.useAndroidX=true
+          EOF
+
           cat > app/build.gradle <<'EOF'
           plugins {
               id 'com.android.application'
           }
           android {
-              namespace 'com.target1juta.app'
+              namespace 'com.target1juta'
               compileSdk 35
               defaultConfig {
-                  applicationId 'com.target1juta.app'
+                  applicationId 'com.target1juta'
                   minSdk 23
                   targetSdk 35
                   versionCode 1
@@ -80,20 +76,19 @@ jobs:
           </manifest>
           EOF
 
-          cat > app/src/main/java/com/target1juta/app/MainActivity.java <<'EOF'
-          package com.target1juta.app;
+          cat > app/src/main/java/com/target1juta/MainActivity.java <<'EOF'
+          package com.target1juta;
           import android.app.Activity;
           import android.os.Bundle;
           import android.webkit.WebView;
           import android.webkit.WebSettings;
           public class MainActivity extends Activity {
-              @Override public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  WebView web = new WebView(this);
-                  web.getSettings().setJavaScriptEnabled(true);
-                  web.getSettings().setDomStorageEnabled(true);
-                  web.loadUrl("file:///android_asset/index.html");
-                  setContentView(web);
+              public void onCreate(Bundle b) {
+                  super.onCreate(b);
+                  WebView w = new WebView(this);
+                  w.getSettings().setJavaScriptEnabled(true);
+                  w.loadUrl("file:///android_asset/index.html");
+                  setContentView(w);
               }
           }
           EOF
@@ -104,5 +99,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Target1Juta-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Target1Juta-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
