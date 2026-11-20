@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Target Rp1 Juta</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101827;color:white;font-family:Arial,sans-serif;padding:20px}
+.container{max-width:480px;margin:auto}
+.card{background:#1c2739;border-radius:18px;padding:20px;margin-bottom:16px}
+h1{margin-top:5px}
+.muted{color:#aab5c6}
+.balance{font-size:32px;font-weight:bold;margin:15px 0}
+.progress{height:14px;background:#364256;border-radius:10px;overflow:hidden}
+.bar{height:100%;width:0;background:#35d399;transition:.3s}
+button{border:0;padding:14px;border-radius:12px;font-weight:bold;font-size:15px;cursor:pointer}
+.add{background:#35d399;color:#10251d}
+.withdraw{background:#34445e;color:white}
+input{width:100%;padding:14px;border-radius:10px;border:1px solid #39465b;background:#101827;color:white;font-size:16px;margin:8px 0}
+.buttons{display:flex;gap:10px}
+.buttons button{flex:1}
+.history{border-bottom:1px solid #39465b;padding:12px 0}
+.green{color:#35d399}
+.red{color:#ff7676}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>💰 Target Rp1 Juta</h1>
+  <p class="muted">Sedikit demi sedikit, lama-lama jadi satu juta.</p>
+
+  <div class="card">
+    <p class="muted">Total tabungan</p>
+    <div class="balance" id="saldo">Rp0</div>
+    <p id="persen">0% dari target</p>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <p class="muted">Target: Rp1.000.000</p>
+  </div>
+
+  <div class="card">
+    <h3>Tambah / tarik uang</h3>
+    <input type="number" id="nominal" placeholder="Masukkan nominal (Rp)">
+    <div class="buttons">
+      <button class="add" onclick="transaksi('tambah')">+ Nabung</button>
+      <button class="withdraw" onclick="transaksi('tarik')">− Tarik</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📜 Riwayat</h3>
+    <div id="riwayat"><p class="muted">Belum ada transaksi.</p></div>
+    <button class="withdraw" style="width:100%;margin-top:12px"
+    onclick="resetData()">Reset tabungan</button>
+  </div>
+</div>
+
+<script>
+let saldo = Number(localStorage.getItem("saldo") || 0);
+let riwayat = JSON.parse(localStorage.getItem("riwayat") || "[]");
+
+function rupiah(n){
+  return "Rp" + n.toLocaleString("id-ID");
+}
+
+function tampil(){
+  document.getElementById("saldo").textContent=rupiah(saldo);
+  let p=Math.min(saldo/1000000*100,100);
+  document.getElementById("persen").textContent=p.toFixed(1)+"% dari target";
+  document.getElementById("bar").style.width=p+"%";
+
+  let el=document.getElementById("riwayat");
+  el.innerHTML=riwayat.length ? "" : '<p class="muted">Belum ada transaksi.</p>';
+
+  riwayat.forEach(r=>{
+    el.innerHTML+=`<div class="history">
+      <b class="${r.jenis==='tambah'?'green':'red'}">
+      ${r.jenis==='tambah'?'+':'-'}${rupiah(r.nominal)}</b>
+      <div class="muted">${r.tanggal}</div>
+    </div>`;
+  });
+
+  localStorage.setItem("saldo",saldo);
+  localStorage.setItem("riwayat",JSON.stringify(riwayat));
+}
+
+function transaksi(jenis){
+  let input=document.getElementById("nominal");
+  let n=Number(input.value);
+  if(!n || n<=0){alert("Masukkan nominal yang benar!");return;}
+  if(jenis==="tarik" && n>saldo){alert("Saldo tidak cukup!");return;}
+
+  saldo+=jenis==="tambah"?n:-n;
+  riwayat.unshift({
+    jenis,nominal:n,
+    tanggal:new Date().toLocaleString("id-ID")
+  });
+  input.value="";
+  tampil();
+}
+
+function resetData(){
+  if(confirm("Yakin reset semua tabungan dan riwayat?")){
+    saldo=0;riwayat=[];
+    tampil();
+  }
+}
+tampil();
+</script>
+</body>
+</html>
